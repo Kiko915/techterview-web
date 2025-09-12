@@ -1,0 +1,37 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+:root {
+  --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Playfair Display', ui-serif, serif;
+  
+  --ui-color-primary-50: #eff6ff;
+  --ui-color-primary-100: #dbeafe;
+  --ui-color-primary-200: #bfdbfe;
+  --ui-color-primary-300: #93c5fd;
+  --ui-color-primary-400: #60a5fa;
+  --ui-color-primary-500: #3b82f6;
+  --ui-color-primary-600: #2563eb;
+  --ui-color-primary-700: #1d4ed8;
+  --ui-color-primary-800: #1e40af;
+  --ui-color-primary-900: #1e3a8a;
+  --ui-color-primary-950: #172554;
+  
+  --ui-primary: var(--ui-color-primary-500);
+}
+
+/* Apply Playfair Display to all headings */
+h1, h2, h3, h4, h5, h6,
+.font-heading {
+  font-family: 'Playfair Display', ui-serif, serif;
+}
+
+/* Apply Montserrat to body text */
+body, p, span, div, 
+.font-body {
+  font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+}
+
+.dark {
+  --ui-primary: var(--ui-color-primary-400);
+}
