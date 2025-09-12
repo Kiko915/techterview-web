@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Coming Soon page - no reactive data needed
+import { Analytics } from '@vercel/analytics/nuxt'
 </script>
 
 <template>
@@ -46,4 +47,5 @@
       </div>
     </div>
   </UApp>
+  <Analytics />
 </template>
