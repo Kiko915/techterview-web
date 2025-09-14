@@ -11,8 +11,10 @@ const isDevelopment = import.meta.env.MODE === 'development'
     <template v-if="!isDevelopment">
       <ComingSoon />
     </template>
-    <!-- You can add your development content here if needed -->
-    development mode.
+    <template v-else>
+      <!-- Development mode - show main app content -->
+      <NuxtPage />
+    </template>
   </UApp>
   <Analytics />
 </template>

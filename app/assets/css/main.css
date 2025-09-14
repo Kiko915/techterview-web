@@ -5,17 +5,23 @@
   --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
   --font-heading: 'Playfair Display', ui-serif, serif;
   
+  /* TechTerview Brand Colors */
+  --techterview-primary: #1e40af;
+  --techterview-secondary: #7c3aed;
+  --techterview-accent: #ec4899;
+  
+  /* UI Color System */
   --ui-color-primary-50: #eff6ff;
   --ui-color-primary-100: #dbeafe;
   --ui-color-primary-200: #bfdbfe;
   --ui-color-primary-300: #93c5fd;
   --ui-color-primary-400: #60a5fa;
-  --ui-color-primary-500: #3b82f6;
-  --ui-color-primary-600: #2563eb;
-  --ui-color-primary-700: #1d4ed8;
+  --ui-color-primary-500: var(--techterview-primary);
+  --ui-color-primary-600: #1d4ed8;
+  --ui-color-primary-700: #1e3a8a;
   --ui-color-primary-800: #1e40af;
-  --ui-color-primary-900: #1e3a8a;
-  --ui-color-primary-950: #172554;
+  --ui-color-primary-900: #172554;
+  --ui-color-primary-950: #0f172a;
   
   --ui-primary: var(--ui-color-primary-500);
 }
@@ -34,4 +40,143 @@ body, p, span, div,
 
 .dark {
   --ui-primary: var(--ui-color-primary-400);
+}
+
+/* TechTerview Auth Page Styles */
+.auth-gradient {
+  background: linear-gradient(135deg, 
+    var(--techterview-primary) 0%, 
+    var(--techterview-secondary) 50%, 
+    var(--techterview-accent) 100%);
+}
+
+.auth-gradient-alt {
+  background: linear-gradient(135deg, 
+    #4f46e5 0%, 
+    var(--techterview-secondary) 50%, 
+    var(--techterview-accent) 100%);
+}
+
+/* Smooth animations for auth pages */
+.auth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom button styles */
+.btn-primary {
+  background-color: #111827;
+  color: white;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+  background-color: #1f2937;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-outline {
+  border: 1px solid #d1d5db;
+  color: #374151;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-outline:hover {
+  background-color: #f9fafb;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: #9ca3af;
+}
+
+/* Form field enhancements */
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  transition: colors 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.form-input:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Password strength indicator */
+.strength-weak { background-color: #ef4444; }
+.strength-fair { background-color: #f97316; }
+.strength-good { background-color: #eab308; }
+.strength-strong { background-color: #22c55e; }
+
+/* Responsive utilities */
+@media (max-width: 1023px) {
+  .auth-mobile-padding {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+  
+  .auth-mobile-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.6s ease-out;
+}
+
+/* Loading states */
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
