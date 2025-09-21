@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, Teams, Functions, Messaging } from 'appwrite'
+import { Client, Account, Databases, Storage, Teams, Functions, Messaging, OAuthProvider } from 'appwrite'
 
 // Configuration interface
 export interface AppwriteConfig {

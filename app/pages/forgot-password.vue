@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useAuth } from '../../composables/useAuth'
 
 // Set page head metadata
 useHead({
@@ -12,34 +13,36 @@ useHead({
   ]
 })
 
+// Auth composable
+const { sendPasswordRecovery, loading, error, clearError } = useAuth()
+
 // Form state
 const email = ref('')
-const isLoading = ref(false)
 const isSubmitted = ref(false)
+const successMessage = ref('')
 
 // Form validation
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 const isFormValid = computed(() => {
-  return email.value.includes('@')
+  return emailRegex.test(email.value.trim())
 })
+
+// Clear error when user types
+const handleInputChange = () => {
+  if (error.value) {
+    clearError()
+  }
+}
 
 // Handle form submission
 const handleResetPassword = async () => {
   if (!isFormValid.value) return
   
-  isLoading.value = true
+  const success = await sendPasswordRecovery(email.value.trim())
   
-  try {
-    // TODO: Implement actual password reset logic
-    console.log('Reset password for:', email.value)
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
+  if (success) {
     isSubmitted.value = true
-  } catch (error) {
-    console.error('Reset password error:', error)
-  } finally {
-    isLoading.value = false
+    successMessage.value = `We've sent a password recovery email to ${email.value.trim()}. Please check your inbox and follow the instructions to reset your password.`
   }
 }
 </script>
@@ -70,6 +73,18 @@ const handleResetPassword = async () => {
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
       <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
         <div v-if="!isSubmitted">
+          <!-- Error Message -->
+          <div v-if="error" class="mb-6">
+            <div class="bg-red-50 border border-red-200 rounded-md p-4">
+              <div class="flex">
+                <Icon name="heroicons:exclamation-triangle" class="h-5 w-5 text-red-400" />
+                <div class="ml-3">
+                  <p class="text-sm text-red-800">{{ error }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <form @submit.prevent="handleResetPassword" class="space-y-6">
             <div>
               <label for="email" class="block text-sm font-medium text-gray-700">
@@ -83,9 +98,10 @@ const handleResetPassword = async () => {
                   autocomplete="email"
                   placeholder="Enter your email"
                   size="lg"
-                  :disabled="isLoading"
+                  :disabled="loading"
                   class="w-full"
                   required
+                  @input="handleInputChange"
                 />
               </div>
             </div>
@@ -94,12 +110,12 @@ const handleResetPassword = async () => {
               <UButton
                 type="submit"
                 size="lg"
-                :loading="isLoading"
-                :disabled="!isFormValid || isLoading"
-                class="w-full bg-black hover:bg-gray-800 text-white"
+                :loading="loading"
+                :disabled="!isFormValid || loading"
+                class="w-full bg-primary hover:bg-blue-800 text-white"
                 block
               >
-                {{ isLoading ? 'Sending...' : 'Send Reset Link' }}
+                {{ loading ? 'Sending...' : 'Send Reset Link' }}
               </UButton>
             </div>
           </form>
@@ -109,9 +125,14 @@ const handleResetPassword = async () => {
           <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
             <Icon name="heroicons:check" class="w-8 h-8 text-green-600" />
           </div>
-          <p class="text-sm text-gray-600">
-            If an account with <strong>{{ email }}</strong> exists, you'll receive a password reset email shortly.
-          </p>
+          <div class="bg-green-50 border border-green-200 rounded-md p-4">
+            <div class="flex">
+              <Icon name="heroicons:check-circle" class="h-5 w-5 text-green-400" />
+              <div class="ml-3">
+                <p class="text-sm text-green-800">{{ successMessage }}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="mt-6">
@@ -124,10 +145,10 @@ const handleResetPassword = async () => {
             </div>
           </div>
 
-          <div class="mt-6 text-center">
+          <div class="mt-6">
             <NuxtLink
               to="/login"
-              class="font-medium text-blue-600 hover:text-blue-500"
+              class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
             >
               Back to Sign In
             </NuxtLink>

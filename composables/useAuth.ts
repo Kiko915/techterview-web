@@ -28,7 +28,14 @@ export const useAuth = () => {
   const loading = useState<boolean>('auth.loading', () => false)
   const error = useState<string | null>('auth.error', () => null)
 
-  const account = getAccount()
+  // Get account instance only when needed, with initialization check
+  const getAccountInstance = () => {
+    try {
+      return getAccount()
+    } catch (error) {
+      throw new Error('Appwrite client not initialized. Please wait for initialization to complete.')
+    }
+  }
 
   /**
    * Clear error state
@@ -52,18 +59,29 @@ export const useAuth = () => {
   }
 
   /**
-   * Get current user session
+   * Get current user session with retry for initialization
    */
-  const getCurrentUser = async (): Promise<Models.User<Models.Preferences> | null> => {
+  const getCurrentUser = async (retryCount = 0): Promise<Models.User<Models.Preferences> | null> => {
     try {
       setLoading(true)
       clearError()
       
-      const currentUser = await account.get()
+      console.log('🔍 getCurrentUser: Making API call to account.get()')
+      const currentUser = await getAccountInstance().get()
+      console.log('✅ getCurrentUser: API call successful:', currentUser)
       user.value = currentUser
       return currentUser
     } catch (err: any) {
-      // User is not authenticated
+      console.log('❌ getCurrentUser: API call failed:', err.message, err.code, err.type)
+      
+      // If Appwrite is not initialized and we haven't retried too many times
+      if (err.message?.includes('not initialized') && retryCount < 3) {
+        console.log(`🔄 getCurrentUser: Retrying in 500ms (attempt ${retryCount + 1}/3)`)
+        await new Promise(resolve => setTimeout(resolve, 500))
+        return getCurrentUser(retryCount + 1)
+      }
+      
+      // User is not authenticated or max retries reached
       user.value = null
       return null
     } finally {
@@ -79,17 +97,51 @@ export const useAuth = () => {
       setLoading(true)
       clearError()
 
+      // Check if user is already logged in
+      try {
+        const currentUser = await getAccountInstance().get()
+        if (currentUser) {
+          // User is already logged in, update state and return success
+          user.value = currentUser
+          return true
+        }
+      } catch {
+        // No active session, continue with login
+      }
+
       // Create email session
-      await account.createEmailPasswordSession(
+      console.log('🔐 Login: Creating email password session...')
+      await getAccountInstance().createEmailPasswordSession(
         credentials.email,
         credentials.password
       )
+      console.log('✅ Login: Session created successfully')
 
       // Get user data
+      console.log('👤 Login: Getting user data...')
       await getCurrentUser()
+      console.log('✅ Login: User data retrieved, login successful')
       
       return true
     } catch (err: any) {
+      // Handle specific session already exists error
+      if (err.code === 401 && err.type === 'user_session_already_exists') {
+        // Delete current session and try again
+        try {
+          await getAccountInstance().deleteSession('current')
+          // Retry login after clearing session
+          await getAccountInstance().createEmailPasswordSession(
+            credentials.email,
+            credentials.password
+          )
+          await getCurrentUser()
+          return true
+        } catch (retryErr: any) {
+          setError(retryErr.message || 'Login failed after clearing session')
+          return false
+        }
+      }
+      
       setError(err.message || 'Login failed')
       return false
     } finally {
@@ -106,7 +158,7 @@ export const useAuth = () => {
       clearError()
 
       // Create account
-      await account.create(
+      await getAccountInstance().create(
         ID.unique(),
         credentials.email,
         credentials.password,
@@ -136,7 +188,7 @@ export const useAuth = () => {
       setLoading(true)
       clearError()
 
-      await account.deleteSession('current')
+      await getAccountInstance().deleteSession('current')
       user.value = null
       
       // Redirect to login page
@@ -159,7 +211,7 @@ export const useAuth = () => {
       setLoading(true)
       clearError()
 
-      await account.createRecovery(
+      await getAccountInstance().createRecovery(
         email,
         `${window.location.origin}/reset-password`
       )
@@ -191,7 +243,7 @@ export const useAuth = () => {
         return false
       }
 
-      await account.updateRecovery(
+      await getAccountInstance().updateRecovery(
         userId,
         secret,
         password
@@ -214,7 +266,7 @@ export const useAuth = () => {
       setLoading(true)
       clearError()
 
-      const updatedUser = await account.updatePrefs(preferences)
+      const updatedUser = await getAccountInstance().updatePrefs(preferences)
       user.value = updatedUser
       
       return true
@@ -234,7 +286,7 @@ export const useAuth = () => {
       setLoading(true)
       clearError()
 
-      const updatedUser = await account.updateName(name)
+      const updatedUser = await getAccountInstance().updateName(name)
       user.value = updatedUser
       
       return true
@@ -254,7 +306,7 @@ export const useAuth = () => {
       setLoading(true)
       clearError()
 
-      const updatedUser = await account.updateEmail(email, password)
+      const updatedUser = await getAccountInstance().updateEmail(email, password)
       user.value = updatedUser
       
       return true
@@ -274,7 +326,7 @@ export const useAuth = () => {
       setLoading(true)
       clearError()
 
-      await account.updatePassword(newPassword, oldPassword)
+      await getAccountInstance().updatePassword(newPassword, oldPassword)
       
       return true
     } catch (err: any) {
@@ -307,6 +359,54 @@ export const useAuth = () => {
     await getCurrentUser()
   }
 
+  /**
+   * Initiate Google OAuth login
+   */
+  const loginWithGoogle = () => {
+    try {
+      console.log('🔐 Google Login: Initiating OAuth session...')
+      setLoading(true)
+      clearError()
+      
+      const account = getAccountInstance()
+      
+      // Create OAuth2 session with Google
+      account.createOAuth2Session(
+        'google' as any, // provider - using as any for compatibility
+        `${window.location.origin}/dashboard`, // success URL
+        `${window.location.origin}/login?error=oauth_failed&reason=email_exists` // failure URL with reason
+      )
+    } catch (err: any) {
+      console.error('❌ Google Login Error:', err)
+      setError(err.message || 'Failed to initiate Google login')
+      setLoading(false)
+    }
+  }
+
+  /**
+   * Initiate Google OAuth signup
+   */
+  const signupWithGoogle = () => {
+    try {
+      console.log('🔐 Google Signup: Initiating OAuth session...')
+      setLoading(true)
+      clearError()
+      
+      const account = getAccountInstance()
+      
+      // Create OAuth2 session with Google
+      account.createOAuth2Session(
+        'google' as any, // provider - using as any for compatibility
+        `${window.location.origin}/dashboard`, // success URL
+        `${window.location.origin}/signup?error=oauth_failed&reason=email_exists` // failure URL with reason
+      )
+    } catch (err: any) {
+      console.error('❌ Google Signup Error:', err)
+      setError(err.message || 'Failed to initiate Google signup')
+      setLoading(false)
+    }
+  }
+
   return {
     // State
     user: readonly(user),
@@ -330,6 +430,8 @@ export const useAuth = () => {
     updatePreferences,
     updateName,
     updateEmail,
-    updatePassword
+    updatePassword,
+    loginWithGoogle,
+    signupWithGoogle
   }
 }
