@@ -104,6 +104,18 @@ onMounted(async () => {
     await router.replace({ query: {} })
   }
   
+  // Load remembered email if available
+  try {
+    const rememberedEmail = localStorage.getItem('remembered_email')
+    if (rememberedEmail) {
+      email.value = rememberedEmail
+      rememberMe.value = true
+      console.log('📧 Loaded remembered email:', rememberedEmail)
+    }
+  } catch (error) {
+    console.log('⚠️ Could not load remembered email:', error)
+  }
+  
   // Check if user is already authenticated
   
   // Quick check: if we already have a user in state, redirect immediately
@@ -258,6 +270,17 @@ const handleSignIn = async () => {
       rememberMe: rememberMe.value
     }
     
+    // Handle "Remember Me" functionality
+    if (rememberMe.value) {
+      // Store email in localStorage for future visits
+      localStorage.setItem('remembered_email', loginData.email)
+      console.log('💾 Email saved for future logins')
+    } else {
+      // Remove stored email if "Remember Me" is unchecked
+      localStorage.removeItem('remembered_email')
+      console.log('🗑️ Stored email removed')
+    }
+    
     // Use Appwrite authentication
     const { login } = useAuth()
     
@@ -391,9 +414,12 @@ const startCooldown = () => {
 }
 
 const clearForm = () => {
-  email.value = ''
+  // Only clear email if "Remember Me" is not checked
+  if (!rememberMe.value) {
+    email.value = ''
+  }
+  
   password.value = ''
-  rememberMe.value = false
   showPassword.value = false
   loginError.value = ''
   successMessage.value = ''
@@ -410,12 +436,23 @@ const clearForm = () => {
   Object.keys(formTouched.value).forEach(key => {
     formTouched.value[key as keyof typeof formTouched.value] = false
   })
+  
+  // Note: Don't reset rememberMe.value here as it should persist
 }
 
 // Computed property to check if form is disabled due to cooldown
 const isFormDisabled = computed(() => {
   return isLoading.value || cooldownTime.value > 0
 })
+
+// Handle "Remember me" checkbox changes
+const handleRememberMeChange = () => {
+  if (!rememberMe.value) {
+    // If unchecked, remove stored email immediately
+    localStorage.removeItem('remembered_email')
+    console.log('🗑️ Stored email removed (checkbox unchecked)')
+  }
+}
 
 // Handle Google sign in
 const handleGoogleSignIn = () => {
@@ -606,6 +643,7 @@ const handleGoogleSignIn = () => {
                   id="remember-me"
                   v-model="rememberMe"
                   :disabled="isFormDisabled"
+                  @change="handleRememberMeChange"
                 />
                 <label for="remember-me" class="ml-2 text-sm text-gray-600">
                   Remember me
